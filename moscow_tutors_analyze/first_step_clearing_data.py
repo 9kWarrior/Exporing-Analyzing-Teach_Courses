@@ -4,6 +4,13 @@ import numpy as np
 from ast import literal_eval
 from util import replace_matches_in_column
 
+pd.set_option('display.max_columns', 12) # Показать все колонки
+pd.set_option('display.max_rows', None) # Показать все строки
+pd.set_option('display.width', 1000) # Увеличить ширину вывода
+pd.set_option('display.colheader_justify', 'center') # Выравнивание заголовков
+pd.set_option('display.precision', 2) # Точность чисел
+
+
 data = pd.read_csv(r"C:\Users\THUNDEROBOT\PycharmProjects\deeplom\repititors_price.csv")
 
 
@@ -63,3 +70,6 @@ replace_matches_in_column(df=preproccessed_data, col='Audience', string_to_match
 audience_series = preproccessed_data['Audience'].explode()
 audience_list = audience_series.unique()
 print(audience_list)
+preproccessed_data = preproccessed_data.join(pd.crosstab(audience_series.index, audience_series))
+preproccessed_data = preproccessed_data.drop(cols_with_lists, axis=1)
+print(preproccessed_data.head())
