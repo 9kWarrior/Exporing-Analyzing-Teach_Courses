@@ -2,6 +2,7 @@ import pandas as pd
 import re
 import numpy as np
 from ast import literal_eval
+from util import replace_matches_in_column
 
 data = pd.read_csv(r"C:\Users\THUNDEROBOT\PycharmProjects\deeplom\repititors_price.csv")
 
@@ -48,4 +49,17 @@ categories_series = preproccessed_data['Categories'].explode()
 # print(preproccessed_data)
 audience_series = preproccessed_data['Audience'].explode()
 audience_list = audience_series.unique()
-audience_list
+
+
+for i in ['11', '10']:
+    replace_matches_in_column(df=preproccessed_data, col='Audience', string_to_match=i, replacing='Pupils of 10-11 grades', min_ratio=17)
+for i in ['9', '8', '7', '6', '5']:
+    replace_matches_in_column(df=preproccessed_data, col='Audience', string_to_match=i, replacing='Pupils of 5-9 grades', min_ratio=10)
+replace_matches_in_column(df=preproccessed_data, col='Audience', string_to_match='4', replacing='Pupils of 1-4 grades', min_ratio=10)
+for i in ['3', '2']:
+    replace_matches_in_column(df=preproccessed_data, col='Audience', string_to_match='Pupils of ' + i, replacing='Pupils of 1-4 grades', min_ratio=71)
+replace_matches_in_column(df=preproccessed_data, col='Audience', string_to_match='Children 1-3 года', replacing='Children 1-3 years old', min_ratio=100)
+
+audience_series = preproccessed_data['Audience'].explode()
+audience_list = audience_series.unique()
+print(audience_list)
