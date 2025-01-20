@@ -87,4 +87,4 @@ for i in ['Video_presentation', 'Photo']:
 for i in ['Status', 'Reviews_number', 'Experience']:
     preproccessed_data = preproccessed_data.astype({i: 'int64'})
 
-print(preproccessed_data.shape)
+preproccessed_data.to_csv('first_tutor_data_postprocesed.csv', index=False)
