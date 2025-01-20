@@ -72,4 +72,19 @@ audience_list = audience_series.unique()
 print(audience_list)
 preproccessed_data = preproccessed_data.join(pd.crosstab(audience_series.index, audience_series))
 preproccessed_data = preproccessed_data.drop(cols_with_lists, axis=1)
+
+
+status_coding = {'Private tutor': '4', 'School teacher': '2', 'Postgraduate student': '3',
+       'Native speaker': '6', 'University professor': '5', 'Student': '1', '-': '0'}
+
+#Заменяем не цифровые данные на цифровые
+
+for elem in status_coding:
+    preproccessed_data['Status'] = preproccessed_data['Status'].apply(lambda x: (str(x).replace(elem, status_coding[elem])))
+for i in ['Video_presentation', 'Photo']:
+    preproccessed_data[i] = preproccessed_data[i].apply(lambda x: 1 if str(x) == 'Yes' else 0)
+
+for i in ['Status', 'Reviews_number', 'Experience']:
+    preproccessed_data = preproccessed_data.astype({i: 'int64'})
+
 print(preproccessed_data.head())
