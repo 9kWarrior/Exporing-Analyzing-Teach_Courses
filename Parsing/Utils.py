@@ -48,6 +48,7 @@ def parse_page_for_price(html_content):
                     else:
                         price_only = parts[0] + parts[1]
                 print(f"Цена: {price_only}")
+                
     # return list_of_ads # список словарей
 
 
