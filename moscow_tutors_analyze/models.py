@@ -37,3 +37,10 @@ print("Standard deviation of cross-validation score", scores.std())
 #
 # print(scores)
 # print("Average MAE score (across experiments):" + str(scores.mean()))
+
+data_for_predictions = pd.DataFrame(np.array([[21,25,5,0,1,
+                                              0,0,0,0,0,
+                                              1,1,1,1]]),
+                                    columns=X.columns)
+pred_price = my_model_1.predict(data_for_predictions)
+print(pred_price)
