@@ -42,5 +42,5 @@ data_for_predictions = pd.DataFrame(np.array([[21,25,5,0,1,
                                               0,0,0,0,0,
                                               1,1,1,1]]),
                                     columns=X.columns)
-pred_price = my_model_1.predict(data_for_predictions)
+pred_price = my_model_2.predict(data_for_predictions)
 print(pred_price)
