@@ -2,13 +2,25 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import csv
-headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+proxies = {"http": "http://125.27.107.212:8080",
+            "https": "http://125.27.107.212:8080"}
 base_url = "https://www.avito.ru/moskva/predlozheniya_uslug/obuchenie_kursy/predmeti_shkoli_i_vuza-ASgBAgICAkSYC7afAaQrkrgC?cd=1&q=%D1%80%D0%B5%D0%BF%D0%B5%D1%82%D0%B8%D1%82%D0%BE%D1%80+%D0%BF%D0%BE+%D0%BC%D0%B0%D1%82%D0%B5%D0%BC%D0%B0%D1%82%D0%B8%D0%BA%D0%B5"
 page_number = "1"
 url = f"{base_url}&p={page_number}"
 # url = "https://www.avito.ru/moskva/predlozheniya_uslug/obuchenie_kursy/predmeti_shkoli_i_vuza-ASgBAgICAkSYC7afAaQrkrgC?cd=1&p=2&q=%D1%80%D0%B5%D0%BF%D0%B5%D1%82%D0%B8%D1%82%D0%BE%D1%80+%D0%BF%D0%BE+%D0%BC%D0%B0%D1%82%D0%B5%D0%BC%D0%B0%D1%82%D0%B8%D0%BA%D0%B5"
 def get_page_content(url):
-    response = requests.get(url, headers=headers)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Accept-Encoding': 'gzip, deflate, br',  # Может потребоваться обработка gzip
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Cache-Control': 'max-age=0',
+        'Referer': 'https://www.google.com/',  # Важно, если пришли с Google
+        'TE': 'Trailers',
+    }
+    response = requests.get(url, headers=headers, proxies=proxies, timeout=10)
     if response.status_code == 200:
         html_content = response.text
         print("Страница загружена успешно")
@@ -16,7 +28,7 @@ def get_page_content(url):
         print(f"Ошибка загрузки страницы: {response.status_code}")
     response.encoding = 'utf-8'  # Задаем кодировку явно
     html_content = response.text
-    time.sleep(5)
+    time.sleep(3)
     return html_content
 
 
@@ -87,7 +99,6 @@ def save_to_csv(data, filename):
 
 
 for i in range(1000):
-    base_url = "https://www.avito.ru/moskva/predlozheniya_uslug/obuchenie_kursy/predmeti_shkoli_i_vuza-ASgBAgICAkSYC7afAaQrkrgC?cd=1&q=%D1%80%D0%B5%D0%BF%D0%B5%D1%82%D0%B8%D1%82%D0%BE%D1%80+%D0%BF%D0%BE+%D0%BC%D0%B0%D1%82%D0%B5%D0%BC%D0%B0%D1%82%D0%B8%D0%BA%D0%B5"
     url = f"{base_url}&p={page_number}"
     html = get_page_content(url)
     print(parse_page_for_price(html))
