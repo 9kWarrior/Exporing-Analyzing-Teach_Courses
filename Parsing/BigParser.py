@@ -130,7 +130,7 @@ def parse_ucheba_page(url):
         uni_blocks = driver.find_elements(By.CLASS_NAME, 'search-results-item')
         print(f"🎓 Найдено вузов: {len(uni_blocks)}")
 
-        for i, uni in enumerate(uni_blocks[:3]):  # Ограничимся первыми 3 вузами
+        for i, uni in enumerate(uni_blocks[:20]):
             try:
                 # Прокручиваем к вузу
                 driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", uni)
