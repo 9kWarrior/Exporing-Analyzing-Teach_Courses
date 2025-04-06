@@ -9,6 +9,19 @@ import re
 import time
 
 
+def extract_archive_date(url):
+    """Извлекает дату из URL архивной версии"""
+    try:
+        # Ищем паттерн даты в URL (формат /web/YYYYMMDDHHMMSS/)
+        date_str = re.search(r'/web/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/', url)
+        if date_str:
+            year, month, day, hour, minute, second = date_str.groups()
+            return f"{day}.{month}.{year} {hour}:{minute}:{second}"
+        return "Дата не определена"
+    except:
+        return "Дата не определена"
+
+
 def setup_driver():
     """Настройка Selenium WebDriver"""
     options = webdriver.ChromeOptions()
@@ -94,6 +107,7 @@ def parse_ucheba_page(url):
     print("🚀 Запускаем парсинг с Selenium...")
     driver = setup_driver()
     results = []
+    archive_date = extract_archive_date(url)  # Извлекаем дату архивации
 
     try:
         # Загрузка страницы с обработкой таймаута
@@ -102,7 +116,7 @@ def parse_ucheba_page(url):
         except:
             print("⚠️ Превышено время загрузки страницы, продолжаем...")
 
-        print("⏳ Ожидаем загрузки элементов...")
+        print(f"⏳ Ожидаем загрузки элементов (архив от {archive_date})...")
 
         # Ожидание появления вузов
         try:
@@ -156,10 +170,12 @@ def parse_ucheba_page(url):
 
                     for program in programs:
                         program_data = parse_program(program)
-                        program_data['Вуз'] = uni_name
+                        program_data.update({
+                            'Вуз': uni_name,
+                            'Дата архивации': archive_date  # Добавляем дату архивации
+                        })
                         results.append(program_data)
-                        print(
-                            f"   ✅ {program_data['Программа']} | Балл: {program_data['Проходной балл']} | Места: {program_data['Бюджетные места']} | Цена: {program_data['Стоимость']}")
+                        print(f"   ✅ {program_data['Программа']} | Дата: {archive_date}")
                 except Exception as e:
                     print(f"⚠️ Ошибка парсинга программ: {str(e)}")
 
