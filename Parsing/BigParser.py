@@ -107,77 +107,114 @@ def parse_ucheba_page(url):
     print("🚀 Запускаем парсинг с Selenium...")
     driver = setup_driver()
     results = []
-    archive_date = extract_archive_date(url)  # Извлекаем дату архивации
+    archive_date = extract_archive_date(url)
 
     try:
-        # Загрузка страницы с обработкой таймаута
-        try:
-            driver.get(url)
-        except:
-            print("⚠️ Превышено время загрузки страницы, продолжаем...")
-
+        driver.get(url)
         print(f"⏳ Ожидаем загрузки элементов (архив от {archive_date})...")
 
-        # Ожидание появления вузов
-        try:
-            WebDriverWait(driver, 30).until(
-                EC.presence_of_element_located((By.CLASS_NAME, 'search-results-item')))
-        except:
-            print("⚠️ Не удалось загрузить список вузов")
-            return pd.DataFrame()
+        WebDriverWait(driver, 40).until(
+            EC.presence_of_element_located((By.CLASS_NAME, 'search-results-item')))
 
-        # Находим все вузы
         uni_blocks = driver.find_elements(By.CLASS_NAME, 'search-results-item')
         print(f"🎓 Найдено вузов: {len(uni_blocks)}")
 
-        for i, uni in enumerate(uni_blocks[:20]):
+        for i, uni in enumerate(uni_blocks):
             try:
-                # Прокручиваем к вузу
-                driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", uni)
-                time.sleep(2)
+                # Прокрутка и получение названия вуза
+                driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", uni)
+                uni_name = WebDriverWait(uni, 15).until(
+                    EC.visibility_of_element_located((By.CLASS_NAME, 'search-results-title'))).text
+                uni_name = re.sub(r'\s+', ' ', uni_name).strip()
+                print(f"\n🏛 Вуз {i + 1}: {uni_name}")
 
-                # Название вуза
-                try:
-                    uni_name = uni.find_element(By.CLASS_NAME, 'search-results-title').text
-                    uni_name = re.sub(r'\s+', ' ', uni_name).strip()
-                    print(f"\n🏛 Вуз {i + 1}: {uni_name}")
-                except:
-                    print(f"⚠️ Не удалось получить название вуза #{i + 1}")
-                    continue
-
-                # Раскрытие списка программ
+                # Улучшенная обработка кнопки с альтернативными классами
                 try:
                     show_programs_btn = WebDriverWait(uni, 15).until(
-                        EC.element_to_be_clickable((By.CLASS_NAME, 'js-search-results-more-info')))
+                        EC.element_to_be_clickable(
+                            (By.CSS_SELECTOR, '.js-search-results-more-info, .js-search-results-toggle')))
                     print(f"🔄 Найдена кнопка: {show_programs_btn.text}")
-
-                    driver.execute_script("arguments[0].click();", show_programs_btn)
-                    print("⏳ Ожидаем загрузки программ...")
-                    time.sleep(5)
-
-                    WebDriverWait(driver, 20).until(
-                        EC.visibility_of_element_located((By.CLASS_NAME, 'search-results-info-item')))
                 except:
-                    print("⚠️ Не удалось раскрыть программы")
+                    print("⚠️ Не найдена кнопка раскрытия программ")
                     continue
 
-                # Парсинг программ
+                # Сохраняем текущее состояние DOM для сравнения
+                initial_html = driver.page_source
+
+                # Клик с обработкой возможных ошибок
                 try:
-                    programs_html = uni.find_element(By.CLASS_NAME, 'search-results-info').get_attribute('outerHTML')
+                    driver.execute_script("arguments[0].click();", show_programs_btn)
+                except Exception as e:
+                    print(f"⚠️ Ошибка при клике: {str(e)}")
+                    continue
+
+                # Улучшенное ожидание загрузки (3 стратегии)
+                try:
+                    # 1. Ждем изменения DOM (если загрузка AJAX)
+                    WebDriverWait(driver, 15).until(
+                        lambda d: d.page_source != initial_html)
+
+                    # 2. Ждем либо появления программ, либо скрытия спиннера
+                    WebDriverWait(driver, 15).until(
+                        lambda d: d.find_elements(By.CLASS_NAME, 'search-results-info-item') or
+                                  not d.find_elements(By.CSS_SELECTOR, '.fa-spin, .search-results-load-icon')
+                    )
+
+                    # 3. Проверяем видимые элементы
+                    WebDriverWait(driver, 15).until(
+                        EC.visibility_of_any_elements_located((By.CLASS_NAME, 'search-results-info-item')))
+
+                except Exception as e:
+                    print(f"⚠️ Ошибка ожидания загрузки: {str(e)}")
+                    # Продолжаем попытку парсинга, даже если ожидание не сработало
+
+                # Альтернативный способ получения данных
+                try:
+                    # Вариант 1: стандартный парсинг
+                    programs_html = uni.find_element(
+                        By.CSS_SELECTOR, '.search-results-info, .programs-list').get_attribute('outerHTML')
+
+                    # Вариант 2: если блок не найден, пробуем получить из общего DOM
+                    if len(programs_html) < 100:  # Если слишком короткий HTML
+                        programs_html = driver.find_element(
+                            By.CSS_SELECTOR, 'body').get_attribute('outerHTML')
+
                     soup = BeautifulSoup(programs_html, 'html.parser')
-                    programs = soup.find_all('section', class_='search-results-info-item')
+
+                    # Ищем программы по разным возможным селекторам
+                    programs = soup.find_all('section', class_=lambda x: x and
+                                                                         ('search-results-info-item' in x or
+                                                                          'program-item' in x or
+                                                                          'edu-program' in x))
+
                     print(f"📚 Найдено программ: {len(programs)}")
+
+                    if len(programs) == 0:
+                        print("ℹ️ Попробуем альтернативный метод поиска...")
+                        # Дополнительные попытки найти программы
+                        programs = soup.find_all('div', class_=lambda x: x and
+                                                                         ('program-card' in x or
+                                                                          'edu-program-card' in x))
+                        print(f"📚 Найдено программ (альтернативный метод): {len(programs)}")
 
                     for program in programs:
                         program_data = parse_program(program)
                         program_data.update({
                             'Вуз': uni_name,
-                            'Дата архивации': archive_date  # Добавляем дату архивации
+                            'Дата архивации': archive_date,
+                            'Статус загрузки': 'success' if len(programs) > 0 else 'empty'
                         })
                         results.append(program_data)
-                        print(f"   ✅ {program_data['Программа']} | Дата: {archive_date}")
+                        print(f"   ✅ {program_data['Программа']}")
+
                 except Exception as e:
                     print(f"⚠️ Ошибка парсинга программ: {str(e)}")
+                    # Добавляем запись даже при ошибке
+                    results.append({
+                        'Вуз': uni_name,
+                        'Дата архивации': archive_date,
+                        'Статус загрузки': f'error: {str(e)}'
+                    })
 
             except Exception as e:
                 print(f"❌ Ошибка обработки вуза #{i + 1}: {str(e)}")
@@ -193,6 +230,31 @@ def parse_ucheba_page(url):
 
 
 # Запуск парсера
+try:
+    test_url = "https://web.archive.org/web/20160213233521/https://www.ucheba.ru/for-abiturients/vuz"
+    print(f"\n🌐 Загружаем данные с: {test_url}")
+    df = parse_ucheba_page(test_url)
+
+    if not df.empty:
+        # Дополнительная очистка данных
+        df = df.dropna(subset=['Программа'])
+
+        # Замена оставшихся NaN (если есть) на 0 для числовых колонок
+        numeric_cols = ['Проходной балл', 'Бюджетные места', 'Стоимость']
+        df[numeric_cols] = df[numeric_cols].fillna(0)
+
+        # Сохранение
+        df.to_csv('ucheba_programs_final.csv', index=False, encoding='utf-8-sig')
+
+        print("\n✅ Успешно собрано программ:", len(df))
+        print("\nПример данных:")
+        print(df.head().to_markdown(index=False, tablefmt="grid"))
+    else:
+        print("\n❌ Не удалось собрать данные")
+except Exception as e:
+    print(f"🔥 Критическая ошибка: {str(e)}")
+
+
 try:
     test_url = "https://web.archive.org/web/20160213233521/https://www.ucheba.ru/for-abiturients/vuz"
     print(f"\n🌐 Загружаем данные с: {test_url}")
