@@ -1,5 +1,5 @@
 import pandas as pd
-from universities import universities
+from universities import universities, universities_s_20, universities_s_40
 from waybackpy import WaybackMachineCDXServerAPI
 from datetime import datetime
 
@@ -28,6 +28,7 @@ def get_snapshots(url):
         print(f"Ошибка для {url}: {e}")
         return []
 
+
 # Сбор данных
 all_snapshots = []
 for url in universities:
@@ -40,5 +41,35 @@ if all_snapshots:
     df = pd.DataFrame(all_snapshots)
     df.to_csv("university_snapshots.csv", index=False)
     print(f"Готово! Результаты сохранены в university_snapshots.csv")
+else:
+    print("Нет данных для сохранения.")
+
+
+all_snapshots = []
+for url in universities_s_20:
+    print(f"Проверяю {url}[0]...")
+    snapshots = get_snapshots(url[0])
+    all_snapshots.extend(snapshots)
+
+# Сохранение в CSV
+if all_snapshots:
+    df = pd.DataFrame(all_snapshots)
+    df.to_csv("university_s_20_snapshots.csv", index=False)
+    print(f"Готово! Результаты сохранены в university_snapshots.csv")
+else:
+    print("Нет данных для сохранения.")
+
+
+all_snapshots = []
+for url in universities_s_40:
+    print(f"Проверяю {url}[0]...")
+    snapshots = get_snapshots(url[0])
+    all_snapshots.extend(snapshots)
+
+# Сохранение в CSV
+if all_snapshots:
+    df = pd.DataFrame(all_snapshots)
+    df.to_csv("university_s_40_snapshots.csv", index=False)
+    print(f"Готово! Результаты сохранены в university_s_40_snapshots.csv")
 else:
     print("Нет данных для сохранения.")
