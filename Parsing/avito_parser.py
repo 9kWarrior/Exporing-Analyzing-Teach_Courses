@@ -5,6 +5,7 @@ import csv
 proxies = {"http": "http://125.27.107.212:8080",
             "https": "http://125.27.107.212:8080"}
 base_url = "https://www.avito.ru/moskva/predlozheniya_uslug/obuchenie_kursy/predmeti_shkoli_i_vuza-ASgBAgICAkSYC7afAaQrkrgC?cd=1&q=%D1%80%D0%B5%D0%BF%D0%B5%D1%82%D0%B8%D1%82%D0%BE%D1%80+%D0%BF%D0%BE+%D0%BC%D0%B0%D1%82%D0%B5%D0%BC%D0%B0%D1%82%D0%B8%D0%BA%D0%B5"
+base_url = "https://www.avito.ru/moskva/predlozheniya_uslug/obuchenie_kursy-ASgBAgICAUSYC7afAQ?cd=1&q=%D1%80%D0%B5%D0%BF%D0%B5%D1%82%D0%B8%D1%82%D0%BE%D1%80+%D0%BF%D0%BE+%D0%BC%D0%B0%D1%82%D0%B5%D0%BC%D0%B0%D1%82%D0%B8%D0%BA%D0%B5"
 page_number = "1"
 url = f"{base_url}&p={page_number}"
 # url = "https://www.avito.ru/moskva/predlozheniya_uslug/obuchenie_kursy/predmeti_shkoli_i_vuza-ASgBAgICAkSYC7afAaQrkrgC?cd=1&p=2&q=%D1%80%D0%B5%D0%BF%D0%B5%D1%82%D0%B8%D1%82%D0%BE%D1%80+%D0%BF%D0%BE+%D0%BC%D0%B0%D1%82%D0%B5%D0%BC%D0%B0%D1%82%D0%B8%D0%BA%D0%B5"
