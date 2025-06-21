@@ -172,7 +172,7 @@ async def handle_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
             original_program,
             PROGRAMS,
             semantic_model,
-            threshold=0.8
+            threshold=0.9
         )
 
         # Корректируем название вуза
@@ -184,6 +184,7 @@ async def handle_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
             threshold=0.75
         )
         university_exists = corrected_university in UNIVERSITIES
+        programm_exists = corrected_program in PROGRAMS
         # Уведомляем пользователя об исправлениях
         corrections = []
         if corrected_program != original_program:
@@ -197,7 +198,7 @@ async def handle_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if corrections:
             await update.message.reply_text("Автоматические исправления:\n" + "\n".join(corrections))
 
-        if not university_exists:
+        if not university_exists or not programm_exists:
             print(input_dict)
             input_dict['Программа'] = find_okso_code(input_dict['Программа'])
             print(input_dict)
