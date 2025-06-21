@@ -10,7 +10,7 @@ from keras.models import load_model
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
-
+from sem_model import find_okso_code, find_exact_match
 
 # Настройка логирования
 logging.basicConfig(
@@ -35,18 +35,28 @@ def load_model_components():
         raise
 
 
+def load_model_components_v2():
+    try:
+        with open('features_list.pkl', 'rb') as f:
+            features = pickle.load(f)
+        preprocessor = joblib.load('full_preprocessor.joblib')
+        model = load_model('lstm_model.keras')
+        scaler_y = joblib.load('scaler_y.joblib')
+        semantic_model = SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
+        return model, preprocessor, scaler_y, features, semantic_model
+    except Exception as e:
+        logger.error(f"Ошибка загрузки модели: {e}")
+        raise
+
+
 # Инициализация модели при старте
 model, preprocessor, scaler_y, features, semantic_model = load_model_components()
-
+model_v2, preprocessor_v2, scaler_y_v2, features_v2, semantic_model_v2 = load_model_components_v2()
 
 def find_closest_match(query: str, options: list, model, threshold=0.7) -> str:
-    """
-    Находит наиболее близкий вариант из списка options для запроса query.
-    Возвращает исправленный вариант или исходный запрос, если совпадение слабое.
-    """
     if not options:
+        print("No opytions")
         return query
-
     # Кодируем все варианты и запрос
     options_embeddings = model.encode(options, convert_to_tensor=True)
     query_embedding = model.encode(query, convert_to_tensor=True)
@@ -61,6 +71,7 @@ def find_closest_match(query: str, options: list, model, threshold=0.7) -> str:
     best_match_score = similarities[best_match_idx]
 
     if best_match_score >= threshold:
+        print("returning this ", options[best_match_idx])
         return options[best_match_idx]
     return query
 # Функция предсказания
@@ -170,9 +181,9 @@ async def handle_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
             original_university,
             UNIVERSITIES,
             semantic_model,
-            threshold=0.75  # Более строгий порог для вузов
+            threshold=0.75
         )
-
+        university_exists = corrected_university in UNIVERSITIES
         # Уведомляем пользователя об исправлениях
         corrections = []
         if corrected_program != original_program:
@@ -186,12 +197,23 @@ async def handle_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if corrections:
             await update.message.reply_text("Автоматические исправления:\n" + "\n".join(corrections))
 
-        # Делаем предсказание стоимости
-        prediction = predict_cost(input_dict,
-                                  context.bot_data["model"],
-                                  context.bot_data["preprocessor"],
-                                  context.bot_data["scaler_y"],
-                                  context.bot_data["features"])
+        if not university_exists:
+            print(input_dict)
+            input_dict['Программа'] = find_okso_code(input_dict['Программа'])
+            print(input_dict)
+            prediction = predict_cost(input_dict,
+                                      context.bot_data["model_v2"],
+                                      context.bot_data["preprocessor_v2"],
+                                      context.bot_data["scaler_y_v2"],
+                                      context.bot_data["features_v2"])
+        else:
+            print("Существует в списке и оксо код не нужен ", input_dict)
+            prediction = predict_cost(input_dict,
+                                      context.bot_data["model"],
+                                      context.bot_data["preprocessor"],
+                                      context.bot_data["scaler_y"],
+                                      context.bot_data["features"])
+
 
         if prediction is not None:
             await update.message.reply_text(f"Предсказанная стоимость: {prediction:.2f} руб.")
@@ -220,20 +242,25 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
 
 
 # def main():
-    # Создаем Application вместо Updater
+
 application = Application.builder().token(TOKEN).build()
 application.bot_data["model"] = model
 application.bot_data["preprocessor"] = preprocessor
 application.bot_data["scaler_y"] = scaler_y
 application.bot_data["features"] = features
 application.bot_data["semantic_model"] = semantic_model
-    # Регистрируем обработчики
+application.bot_data["model_v2"] = model_v2
+application.bot_data["preprocessor_v2"] = preprocessor_v2
+application.bot_data["scaler_y_v2"] = scaler_y_v2
+application.bot_data["features_v2"] = features_v2
+
+
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CommandHandler("predict", predict_handler))
 application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_input))
 application.add_error_handler(error_handler)
 
-    # Запускаем бота
+
 application.run_polling()
 
 
