@@ -181,7 +181,7 @@ async def handle_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
             original_university,
             UNIVERSITIES,
             semantic_model,
-            threshold=0.83
+            threshold=0.9
         )
         university_exists = corrected_university in UNIVERSITIES
         programm_exists = corrected_program in PROGRAMS
