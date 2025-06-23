@@ -172,7 +172,7 @@ async def handle_input(update: Update, context: ContextTypes.DEFAULT_TYPE):
             original_program,
             PROGRAMS,
             semantic_model,
-            threshold=0.95
+            threshold=0.8
         )
 
         # Корректируем название вуза
